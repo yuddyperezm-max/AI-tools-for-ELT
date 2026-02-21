@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Exploration Rotations — Materials Design Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #1c2035;
+  --bg2: #232843;
+  --surface: #2a3050;
+  --surface2: #313863;
+  --border: rgba(255,255,255,0.08);
+  --text: #e8eaf4;
+  --muted: #8890b0;
+  --soft: #b0b8d8;
+  --s1: #f4845f;   --s1d: #e06040;   --s1bg: rgba(244,132,95,0.1);
+  --s2: #3ecfb2;   --s2d: #2aaa90;   --s2bg: rgba(62,207,178,0.1);
+  --s3: #a78bfa;   --s3d: #8b6ef0;   --s3bg: rgba(167,139,250,0.1);
+  --s4: #f06292;   --s4d: #d94d7a;   --s4bg: rgba(240,98,146,0.1);
+  --gold: #e8b84b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 0% 0%,rgba(167,139,250,0.07) 0%,transparent 60%),radial-gradient(ellipse 60% 60% at 100% 100%,rgba(62,207,178,0.06) 0%,transparent 60%);pointer-events:none;z-index:0;}
+
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 2rem;}
+
+/* HEADER */
+header{padding:3rem 0 2rem;text-align:center;}
+.label-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(232,184,75,0.35);padding:0.3rem 1rem;border-radius:100px;margin-bottom:1.4rem;background:rgba(232,184,75,0.06);}
+h1{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5.5vw,4.2rem);font-weight:900;line-height:1.06;letter-spacing:-0.02em;color:var(--text);margin-bottom:0.8rem;}
+h1 span{color:var(--gold);}
+.subtitle{color:var(--muted);font-size:0.95rem;max-width:560px;margin:0 auto 2.5rem;line-height:1.75;}
+.subtitle em{color:var(--gold);font-style:normal;font-weight:500;}
+
+/* TIMER */
+.timer-row{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:3rem;flex-wrap:wrap;}
+.timer-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:0.9rem 1.4rem;display:flex;align-items:center;gap:0.8rem;font-family:'DM Mono',monospace;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 7px rgba(74,222,128,0.6);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.t-num{font-size:1.55rem;font-weight:500;min-width:5ch;}
+.t-lbl{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.tbtn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:0.5rem 1rem;border-radius:9px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.78rem;transition:all 0.2s;}
+.tbtn:hover{background:var(--surface);}
+.tbtn.on{background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.35);color:#4ade80;}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-bottom:1.4rem;}
+@media(max-width:760px){.grid{grid-template-columns:1fr;}}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;transition:transform 0.3s,box-shadow 0.3s;}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 50px rgba(0,0,0,0.3);}
+.card[data-s="1"]{--a:var(--s1);--ad:var(--s1d);--abg:var(--s1bg);}
+.card[data-s="2"]{--a:var(--s2);--ad:var(--s2d);--abg:var(--s2bg);}
+.card[data-s="3"]{--a:var(--s3);--ad:var(--s3d);--abg:var(--s3bg);}
+.card[data-s="4"]{--a:var(--s4);--ad:var(--s4d);--abg:var(--s4bg);}
+
+.card-bar{height:3px;background:var(--a);}
+.card-head{padding:1.5rem 1.6rem 1.2rem;border-bottom:1px solid var(--border);background:var(--abg);}
+.card-tag{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--a);margin-bottom:0.4rem;}
+.card-title{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:0.55rem;}
+.card-badge{display:inline-flex;align-items:center;gap:0.35rem;font-size:0.65rem;font-family:'DM Mono',monospace;letter-spacing:0.07em;text-transform:uppercase;background:rgba(255,255,255,0.07);color:var(--a);border:1px solid rgba(255,255,255,0.1);padding:0.22rem 0.65rem;border-radius:100px;}
+
+/* chips */
+.chips-row{padding:0.9rem 1.6rem;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;}
+.chip-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-right:0.3rem;white-space:nowrap;}
+.chip{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:500;font-family:'DM Sans',sans-serif;background:var(--abg);border:1.5px solid var(--a);color:var(--a);padding:0.25rem 0.65rem;border-radius:8px;cursor:pointer;transition:all 0.18s;}
+.chip:hover{background:var(--a);color:#fff;}
+.chip .cdot{width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0;}
+
+/* card body */
+.card-body{padding:1.4rem 1.6rem;}
+
+/* continuous step list */
+.steps{list-style:none;counter-reset:step;}
+.steps li{
+  counter-increment:step;
+  display:flex;align-items:flex-start;gap:0.75rem;
+  padding:0.6rem 0;border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.steps li:last-child{border-bottom:none;}
+.step-num{
+  min-width:22px;height:22px;border-radius:50%;
+  background:var(--abg);border:1.5px solid var(--a);color:var(--a);
+  font-family:'DM Mono',monospace;font-size:0.63rem;font-weight:600;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:0.12rem;
+}
+.step-text{font-size:0.85rem;color:var(--soft);line-height:1.65;}
+.step-text strong{color:var(--text);font-weight:600;}
+.step-text .ai-hint{color:var(--a);font-family:'DM Mono',monospace;font-size:0.65rem;opacity:0.85;}
+
+.open-btn{display:flex;align-items:center;gap:0.5rem;background:none;border:1px solid var(--border);color:var(--a);font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.09em;text-transform:uppercase;padding:0.6rem 1rem;border-radius:10px;cursor:pointer;width:100%;justify-content:center;transition:all 0.2s;margin-top:0.8rem;}
+.open-btn:hover{background:var(--abg);border-color:var(--a);}
+
+/* REFLECTION PANEL */
+.refpanel{display:none;background:var(--abg);border-top:1px solid var(--a);padding:1.3rem 1.6rem 1.6rem;animation:rise 0.3s ease;}
+.refpanel.open{display:block;}
+@keyframes rise{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+
+.rp-h{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--a);margin:1rem 0 0.5rem;}
+.rp-h:first-child{margin-top:0;}
+
+/* framework */
+.fw-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:0.7rem;}
+.fw-box h5{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--a);margin-bottom:0.6rem;}
+.fw-cols{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;}
+.fw-col{background:var(--surface);border-radius:9px;padding:0.65rem 0.8rem;}
+.fw-ct{font-size:0.68rem;font-weight:600;font-family:'DM Mono',monospace;margin-bottom:0.35rem;}
+.fw-col[data-t="n"] .fw-ct{color:#f87171;}
+.fw-col[data-t="y"] .fw-ct{color:#4ade80;}
+.fw-col ul{list-style:none;}
+.fw-col ul li{font-size:0.73rem;color:var(--soft);line-height:1.5;padding:0.08rem 0;}
+.fw-col ul li::before{content:'· ';}
+.fw-note{margin-top:0.7rem;font-size:0.75rem;color:var(--muted);line-height:1.55;}
+
+/* prompt boxes */
+.pbox{background:var(--surface2);border-left:3px solid var(--a);border-radius:0 10px 10px 0;padding:0.85rem 2.8rem 0.85rem 0.9rem;margin-bottom:0.6rem;font-size:0.81rem;color:var(--soft);line-height:1.65;position:relative;font-style:italic;}
+.cpbtn{position:absolute;top:0.55rem;right:0.55rem;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:0.58rem;padding:0.18rem 0.45rem;border-radius:5px;cursor:pointer;transition:all 0.18s;}
+.cpbtn:hover{color:var(--a);border-color:var(--a);}
+
+/* reflection questions */
+.qlist{list-style:none;margin-bottom:0.8rem;}
+.qlist li{font-size:0.82rem;color:var(--muted);padding:0.35rem 0 0.35rem 1.2rem;position:relative;line-height:1.55;border-bottom:1px solid rgba(255,255,255,0.04);}
+.qlist li:last-child{border-bottom:none;}
+.qlist li::before{content:'◆';position:absolute;left:0;color:var(--a);font-size:0.42rem;top:0.62rem;}
+
+.rta{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.84rem;line-height:1.6;padding:0.85rem 1rem;resize:vertical;min-height:110px;outline:none;transition:border-color 0.2s;}
+.rta:focus{border-color:var(--a);}
+.rta::placeholder{color:var(--muted);}
+.sbtn{margin-top:0.55rem;background:var(--a);border:none;color:#fff;font-family:'DM Mono',monospace;font-size:0.67rem;letter-spacing:0.09em;text-transform:uppercase;padding:0.5rem 1.1rem;border-radius:8px;cursor:pointer;transition:all 0.2s;}
+.sbtn:hover{background:var(--ad);}
+.snote{font-family:'DM Mono',monospace;font-size:0.65rem;color:#4ade80;margin-left:0.7rem;opacity:0;transition:opacity 0.3s;}
+.snote.show{opacity:1;}
+
+/* FINAL REFLECTION CARD */
+.final-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;overflow:hidden;margin-bottom:3rem;
+}
+.final-bar{height:3px;background:linear-gradient(90deg,var(--s1),var(--s2),var(--s3),var(--s4));}
+.final-head{
+  padding:1.5rem 1.6rem 1.2rem;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(232,184,75,0.06),rgba(167,139,250,0.05));
+}
+.final-tag{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);margin-bottom:0.4rem;}
+.final-title{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:0.3rem;}
+.final-sub{font-size:0.84rem;color:var(--muted);line-height:1.6;}
+.final-body{padding:1.4rem 1.6rem;}
+
+.final-qs{list-style:none;margin-bottom:1.4rem;}
+.final-qs li{
+  display:flex;align-items:flex-start;gap:0.75rem;
+  padding:0.65rem 0;border-bottom:1px solid rgba(255,255,255,0.05);
+  font-size:0.85rem;color:var(--soft);line-height:1.65;
+}
+.final-qs li:last-child{border-bottom:none;}
+.fq-num{
+  min-width:22px;height:22px;border-radius:50%;
+  background:rgba(232,184,75,0.12);border:1.5px solid var(--gold);color:var(--gold);
+  font-family:'DM Mono',monospace;font-size:0.63rem;font-weight:600;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:0.12rem;
+}
+
+.final-rta{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;line-height:1.65;padding:1rem 1.1rem;resize:vertical;min-height:130px;outline:none;transition:border-color 0.2s;}
+.final-rta:focus{border-color:var(--gold);}
+.final-rta::placeholder{color:var(--muted);}
+.final-sbtn{margin-top:0.6rem;background:var(--gold);border:none;color:#1c2035;font-family:'DM Mono',monospace;font-size:0.67rem;letter-spacing:0.09em;text-transform:uppercase;padding:0.55rem 1.2rem;border-radius:8px;cursor:pointer;transition:all 0.2s;font-weight:600;}
+.final-sbtn:hover{filter:brightness(1.1);}
+
+/* PROGRESS */
+.prog-section{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:1.8rem 2rem;margin-bottom:2.5rem;}
+.prog-title{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:1.1rem;color:var(--text);}
+.prog-bars{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;}
+@media(max-width:640px){.prog-bars{grid-template-columns:repeat(2,1fr);}}
+.pi-label{font-size:0.65rem;font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.45rem;font-weight:500;}
+.pi[data-s="1"] .pi-label{color:var(--s1);}
+.pi[data-s="2"] .pi-label{color:var(--s2);}
+.pi[data-s="3"] .pi-label{color:var(--s3);}
+.pi[data-s="4"] .pi-label{color:var(--s4);}
+.pi[data-s="5"] .pi-label{color:var(--gold);}
+.track{height:6px;background:var(--surface2);border-radius:100px;overflow:hidden;}
+.fill{height:100%;border-radius:100px;width:0%;transition:width 0.6s ease;}
+.pi[data-s="1"] .fill{background:var(--s1);}
+.pi[data-s="2"] .fill{background:var(--s2);}
+.pi[data-s="3"] .fill{background:var(--s3);}
+.pi[data-s="4"] .fill{background:var(--s4);}
+.pi[data-s="5"] .fill{background:var(--gold);}
+.pi-pct{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);margin-top:0.28rem;}
+
+/* EXPORT */
+.export-wrap{text-align:center;padding-bottom:4rem;}
+.expbtn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:0.76rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.85rem 2rem;border-radius:12px;cursor:pointer;transition:all 0.2s;}
+.expbtn:hover{border-color:var(--gold);color:var(--gold);}
+
+footer{text-align:center;padding:0.5rem 0 2.5rem;font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--muted);letter-spacing:0.08em;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(5,8,20,0.78);backdrop-filter:blur(12px);z-index:200;display:flex;align-items:center;justify-content:center;padding:1.5rem;opacity:0;pointer-events:none;transition:opacity 0.28s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:22px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;transform:scale(0.96) translateY(18px);transition:transform 0.28s ease;scrollbar-width:thin;scrollbar-color:var(--surface2) transparent;position:relative;}
+.overlay.open .modal{transform:scale(1) translateY(0);}
+.mbar{height:4px;border-radius:22px 22px 0 0;}
+.mx{position:absolute;top:1rem;right:1rem;background:var(--surface2);border:1px solid var(--border);color:var(--muted);width:29px;height:29px;border-radius:50%;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:all 0.18s;z-index:2;}
+.mx:hover{color:var(--text);}
+.mbody{padding:1.7rem 1.9rem 2rem;}
+.mname{font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;color:var(--text);margin-bottom:0.2rem;}
+.mcat{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:0.9rem;}
+.mdesc{font-size:0.87rem;color:var(--soft);line-height:1.72;margin-bottom:0.9rem;}
+.mst{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:0.9rem 0 0.45rem;}
+.muse{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:0.8rem 1rem;margin-bottom:0.5rem;font-size:0.83rem;color:var(--soft);line-height:1.65;border-left-width:3px;border-left-style:solid;}
+.msteps{list-style:none;counter-reset:ms;}
+.msteps li{counter-increment:ms;display:flex;align-items:flex-start;gap:0.65rem;font-size:0.83rem;color:var(--soft);line-height:1.55;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.msteps li:last-child{border-bottom:none;}
+.msteps li::before{content:counter(ms);min-width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:600;flex-shrink:0;margin-top:0.06rem;color:#fff;}
+.mgobtn{display:block;width:100%;margin-top:1.4rem;font-family:'DM Mono',monospace;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.85rem;border-radius:12px;cursor:pointer;text-align:center;text-decoration:none;border:none;color:#fff;transition:all 0.2s;}
+.mgobtn:hover{opacity:0.85;transform:translateY(-2px);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="label-tag">✦ Materials Design Lab · MEI Program</div>
+  <h1>AI Exploration<br><span>Rotations</span></h1>
+  <p class="subtitle">Four stations to design real English teaching materials with AI.<br><em>Click any tool chip first</em> — learn the tool, then open it.</p>
+</header>
+
+<!-- TIMER -->
+<div class="timer-row">
+  <div class="timer-card">
+    <div class="live-dot"></div>
+    <div><div class="t-lbl">Station Timer</div><div class="t-num" id="tDisp">20:00</div></div>
+  </div>
+  <div style="display:flex;gap:0.5rem;">
+    <button class="tbtn" id="tBtn" onclick="toggleTimer()">▶ Start</button>
+    <button class="tbtn" onclick="resetTimer()">↺ Reset</button>
+  </div>
+  <div class="timer-card" style="padding:0.8rem 1.2rem;">
+    <div><div class="t-lbl">Active Station</div><div id="activeS" style="font-family:'DM Mono',monospace;font-size:0.88rem;min-width:170px;">—</div></div>
+  </div>
+</div>
+
+<!-- ══ STATIONS GRID ══ -->
+<div class="grid">
+
+<!-- ─ S1: TEXT ADAPTATION ─ -->
+<div class="card" data-s="1" onclick="setStation('Station 1 — Text Adaptation')">
+  <div class="card-bar"></div>
+  <div class="card-head">
+    <div class="card-tag">Station 01 · Reading + Language Control</div>
+    <div class="card-title">Text Adaptation</div>
+    <span class="card-badge">📖 Reading · CEFR A2→B1</span>
+  </div>
+  <div class="chips-row">
+    <span class="chip-label">Tools →</span>
+    <button class="chip" onclick="event.stopPropagation();openTool('chatgpt')"><span class="cdot"></span>ChatGPT</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('claude')"><span class="cdot"></span>Claude</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('gemini')"><span class="cdot"></span>Gemini</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('deepl')"><span class="cdot"></span>DeepL Write</button>
+  </div>
+  <div class="card-body">
+    <ol class="steps">
+      <li><div class="step-num">1</div><div class="step-text">Choose an authentic English text and paste it into an AI tool. Request a <strong>CEFR A2 adaptation</strong> for your learners. Specify their age, country, and context in the prompt. <span class="ai-hint">(ChatGPT, Claude, Gemini)</span></div></li>
+      <li><div class="step-num">2</div><div class="step-text">Request a <strong>B1 version</strong> of the same original text. Place both adaptations side by side and compare what the AI changed in vocabulary, syntax, and cohesion — and what it missed. <span class="ai-hint">(ChatGPT, Claude)</span></div></li>
+      <li><div class="step-num">3</div><div class="step-text">Ask the AI to generate <strong>5–8 comprehension questions</strong>: 2 literal, 2 inferential, 1 critical thinking, 1 vocabulary in context, 1 personal response. Then evaluate: do the questions assess real understanding or just surface recognition? <span class="ai-hint">(ChatGPT, Claude, Gemini)</span></div></li>
+      <li><div class="step-num">4</div><div class="step-text"><strong>Critically edit the output</strong>: rewrite any vocabulary above the target CEFR level, unnatural phrasing, or culturally irrelevant references. Use DeepL Write to test naturalness after your edits. Document what you changed and why. <span class="ai-hint">(DeepL Write to polish, Claude to critique)</span></div></li>
+      <li><div class="step-num">5</div><div class="step-text">Design a <strong>pre-reading warm-up activity</strong> and a <strong>vocabulary support box</strong> (glossary or matching exercise) that serves your specific learners — not a generic class. <span class="ai-hint">(ChatGPT, Claude)</span></div></li>
+    </ol>
+    <button class="open-btn" onclick="event.stopPropagation();toggleRef(1)"><span>✦</span> Reflection & Prompts</button>
+  </div>
+  <div class="refpanel" id="ref-1">
+    <div class="rp-h">Ready-to-use Prompts</div>
+    <div class="pbox">"I am an English teacher in Colombia. Adapt this text to CEFR A2 for 8th-grade students (age 13–14). Simplify vocabulary without removing key content words. Keep 3 complex sentences as scaffolded challenges and mark them [SCAFFOLD]. Text: [paste here]"<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="pbox">"Now adapt the same original text to CEFR B1. Add two idiomatic expressions in context. Generate: 2 literal questions, 2 inferential questions, 1 critical thinking question, and 1 vocabulary-in-context exercise using 4 words from the text."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="pbox">"Design a pre-reading warm-up for this B1 adapted text. Activate prior knowledge, introduce 4 key vocabulary items with contextual clues, and take no more than 8 minutes. Format as a printable handout section."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="rp-h">Reflection Questions</div>
+    <ul class="qlist">
+      <li>What changes did the AI make to the text — in lexis, syntax, and cohesion? Were those changes appropriate?</li>
+      <li>Is the adapted version truly aligned with the target CEFR level? How do you know?</li>
+      <li>What did you modify or rewrite from the AI output — and what does that reveal about AI's limitations?</li>
+      <li>Do the comprehension questions assess understanding or only surface recognition?</li>
+      <li>How does this adapted text better serve your specific learners compared to the original?</li>
+    </ul>
+    <textarea class="rta" id="rtx-1" placeholder="Write your reflection here…"></textarea>
+    <div><button class="sbtn" onclick="saveRef(1)">✓ Save</button><span class="snote" id="sn-1">Saved ✓</span></div>
+  </div>
+</div>
+
+<!-- ─ S2: SPEAKING ─ -->
+<div class="card" data-s="2" onclick="setStation('Station 2 — Speaking Design')">
+  <div class="card-bar"></div>
+  <div class="card-head">
+    <div class="card-tag">Station 02 · Speaking + Task Authenticity</div>
+    <div class="card-title">Speaking & Interaction Design</div>
+    <span class="card-badge">🎙 Speaking · Role-Play Tasks</span>
+  </div>
+  <div class="chips-row">
+    <span class="chip-label">Tools →</span>
+    <button class="chip" onclick="event.stopPropagation();openTool('chatgpt')"><span class="cdot"></span>ChatGPT</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('characterai')"><span class="cdot"></span>Character.ai</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('piai')"><span class="cdot"></span>Pi</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('talkai')"><span class="cdot"></span>TalkAI</button>
+  </div>
+  <div class="card-body">
+    <ol class="steps">
+      <li><div class="step-num">1</div><div class="step-text">Generate a <strong>complete role-play task card set</strong>: two role cards (A & B) with different background information creating a genuine information gap, a vocabulary bank of 8 words, and B1-appropriate language support phrases. <span class="ai-hint">(ChatGPT)</span></div></li>
+      <li><div class="step-num">2</div><div class="step-text">Ask the AI directly: <strong>"Could this task be completed without speaking?"</strong> If yes, the information gap is not real — redesign until learners genuinely need to communicate to complete it. <span class="ai-hint">(ChatGPT)</span></div></li>
+      <li><div class="step-num">3</div><div class="step-text"><strong>Test the scenario yourself</strong> by playing one role in real time. Detect formulaic language (e.g. "Good day, I wish to inquire…"), missing communicative decision points, or situations that don't reflect your learners' real context. Rewrite what feels artificial. <span class="ai-hint">(Character.ai, Pi, TalkAI for voice)</span></div></li>
+      <li><div class="step-num">4</div><div class="step-text">Design a <strong>speaking assessment rubric</strong> with 4 criteria (Fluency, Vocabulary, Communication Strategies, Task Completion) and 3 performance levels aligned to the task. <span class="ai-hint">(ChatGPT)</span></div></li>
+      <li><div class="step-num">5</div><div class="step-text">Create a <strong>sentence starters strip</strong> that scaffolds the communicative act without giving away the conversation — supporting language use without replacing it. <span class="ai-hint">(ChatGPT)</span></div></li>
+    </ol>
+    <button class="open-btn" onclick="event.stopPropagation();toggleRef(2)"><span>✦</span> Reflection & Prompts</button>
+  </div>
+  <div class="refpanel" id="ref-2">
+    <div class="rp-h">Ready-to-use Prompts</div>
+    <div class="pbox">"Create a B1 English speaking role-play for two Colombian teenagers (age 15). Student A wants to convince Student B to join a school environmental club. Include: two full role cards with different background info and a secret goal for each, a genuine information gap, 8 vocabulary items with definitions, and 5 useful expressions per role."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="pbox">"Design a 4-criterion speaking rubric (Fluency, Vocabulary, Communication Strategies, Task Completion) with 3 performance levels — Developing / Meets Expectations / Exceeds Expectations — for this B1 role-play. Format as a printable classroom rubric."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="pbox">"Create a sentence starters strip for this speaking task. Include 6 expressions for: agreeing, disagreeing politely, asking for clarification, giving reasons, and expressing enthusiasm — all at B1. Format as a cut-out strip students keep on their desk."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="rp-h">Reflection Questions</div>
+    <ul class="qlist">
+      <li>Is there a real information gap between participants — where each speaker has knowledge the other genuinely needs?</li>
+      <li>What communicative decision must learners make during the task?</li>
+      <li>Could this task be completed without speaking? Why or why not?</li>
+      <li>What did you change in the AI-generated scenario to increase its authenticity?</li>
+      <li>How does this task reflect your learners' real communicative context?</li>
+    </ul>
+    <textarea class="rta" id="rtx-2" placeholder="Write your reflection here…"></textarea>
+    <div><button class="sbtn" onclick="saveRef(2)">✓ Save</button><span class="snote" id="sn-2">Saved ✓</span></div>
+  </div>
+</div>
+
+<!-- ─ S3: VISUAL ─ -->
+<div class="card" data-s="3" onclick="setStation('Station 3 — Visual Vocabulary')">
+  <div class="card-bar"></div>
+  <div class="card-head">
+    <div class="card-tag">Station 03 · Multimodal Literacy</div>
+    <div class="card-title">Vocabulary & Visual Support</div>
+    <span class="card-badge">🖼 Multimodal · Image Design</span>
+  </div>
+  <div class="chips-row">
+    <span class="chip-label">Tools →</span>
+    <button class="chip" onclick="event.stopPropagation();openTool('canva')"><span class="cdot"></span>Canva Magic</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('dalle')"><span class="cdot"></span>DALL·E</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('ideogram')"><span class="cdot"></span>Ideogram</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('firefly')"><span class="cdot"></span>Adobe Firefly</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('chatgpt')"><span class="cdot"></span>ChatGPT</button>
+  </div>
+  <div class="card-body">
+    <ol class="steps">
+      <li><div class="step-num">1</div><div class="step-text">Generate a <strong>decorative image</strong> about your teaching topic — visually attractive but without any pedagogical scaffolding. Then apply the framework below: ask yourself what specific linguistic difficulty this image reduces. If the answer is "none," it is decorative. <span class="ai-hint">(DALL·E, Adobe Firefly, Canva Magic)</span></div></li>
+      <li><div class="step-num">2</div><div class="step-text">Generate a <strong>pedagogical image</strong>: a labeled diagram, visual sequence, or concept map that scaffolds meaning for 6–8 target vocabulary items. The image must reduce a specific conceptual or linguistic difficulty for your learners. <span class="ai-hint">(Ideogram for in-image labels, DALL·E + Canva for overlays)</span></div></li>
+      <li><div class="step-num">3</div><div class="step-text">Evaluate both images for <strong>cultural and contextual appropriateness</strong>: Are the people, settings, and references relevant and respectful to your learners? Reject and regenerate anything that does not fit. Document what you rejected and why. <span class="ai-hint">(ChatGPT to evaluate critically)</span></div></li>
+      <li><div class="step-num">4</div><div class="step-text">Design a <strong>vocabulary activity</strong> using the pedagogical image: image labeling with a word bank, matching definitions, picture dictation, or predict-the-text. Format it as a student handout. <span class="ai-hint">(ChatGPT to generate, Canva to format)</span></div></li>
+      <li><div class="step-num">5</div><div class="step-text">Write a <strong>teacher's note</strong> explaining where this image fits in the lesson sequence (pre-teaching / during / post-task), how it reduces cognitive overload, and how it enhances comprehension or engagement specifically for your learners. <span class="ai-hint">(ChatGPT, Claude)</span></div></li>
+    </ol>
+    <button class="open-btn" onclick="event.stopPropagation();toggleRef(3)"><span>✦</span> Framework, Reflection & Prompts</button>
+  </div>
+  <div class="refpanel" id="ref-3">
+    <div class="rp-h">Decorative vs. Pedagogical Image Framework</div>
+    <div class="fw-box">
+      <h5>📐 Mayer (2009) Multimedia Learning · Cambridge U.P. | Hill (2003) Visual Elements in ELT · Continuum</h5>
+      <div class="fw-cols">
+        <div class="fw-col" data-t="n">
+          <div class="fw-ct">❌ Decorative</div>
+          <ul>
+            <li>Adds appeal, not meaning</li>
+            <li>No link to target language</li>
+            <li>Removable without learning loss</li>
+            <li>Creates seductive detail effect</li>
+            <li>Ex: generic stock classroom photo</li>
+          </ul>
+        </div>
+        <div class="fw-col" data-t="y">
+          <div class="fw-ct">✅ Pedagogical</div>
+          <ul>
+            <li>Scaffolds or elicits meaning</li>
+            <li>Shows relationships / sequences</li>
+            <li>Removal causes learning loss</li>
+            <li>Anchors a task or vocabulary set</li>
+            <li>Ex: labeled ecosystem cross-section</li>
+          </ul>
+        </div>
+      </div>
+      <div class="fw-note"><strong style="color:var(--a)">Key question:</strong> "If I removed this image, would students understand less?" Yes → pedagogical. No → decorative.</div>
+    </div>
+    <div class="rp-h">Ready-to-use Prompts</div>
+    <div class="pbox">[DECORATIVE] "A colorful, warm classroom scene with students working together, bright colors, cheerful atmosphere — no text, no labels, no diagrams." → After generating: What specific linguistic difficulty does this image reduce? If none, it is decorative.<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="pbox">[PEDAGOGICAL — use in Ideogram] "A clearly labeled cross-section diagram of a tropical rainforest with labels: 'Emergent Layer', 'Canopy', 'Understory', 'Forest Floor'. Each layer has one animal and one plant labeled with arrows. Flat educational infographic, white background."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="pbox">"Using this pedagogical image, design a B1 image-labeling activity: a blank version with 8 empty labels, a word bank of 12 words (8 answers + 4 distractors), and 3 comprehension questions to answer after labeling. Format as a printable student handout."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="rp-h">Reflection Questions</div>
+    <ul class="qlist">
+      <li>Does the image scaffold meaning or simply decorate the material?</li>
+      <li>What specific linguistic or conceptual difficulty does the visual reduce for your learners?</li>
+      <li>Is the visual culturally and contextually appropriate for your learners?</li>
+      <li>What did the AI generate that you decided to reject — and why?</li>
+      <li>How does the visual enhance comprehension or engagement specifically for this group?</li>
+    </ul>
+    <textarea class="rta" id="rtx-3" placeholder="Write your reflection here…"></textarea>
+    <div><button class="sbtn" onclick="saveRef(3)">✓ Save</button><span class="snote" id="sn-3">Saved ✓</span></div>
+  </div>
+</div>
+
+<!-- ─ S4: LISTENING ─ -->
+<div class="card" data-s="4" onclick="setStation('Station 4 — Listening Script')">
+  <div class="card-bar"></div>
+  <div class="card-head">
+    <div class="card-tag">Station 04 · Listening Authenticity</div>
+    <div class="card-title">Listening / Micro-Script</div>
+    <span class="card-badge">🎧 Listening · Script + Audio Design</span>
+  </div>
+  <div class="chips-row">
+    <span class="chip-label">Tools →</span>
+    <button class="chip" onclick="event.stopPropagation();openTool('chatgpt')"><span class="cdot"></span>ChatGPT</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('elevenlabs')"><span class="cdot"></span>ElevenLabs</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('murf')"><span class="cdot"></span>Murf AI</button>
+    <button class="chip" onclick="event.stopPropagation();openTool('naturalreader')"><span class="cdot"></span>NaturalReader</button>
+  </div>
+  <div class="card-body">
+    <ol class="steps">
+      <li><div class="step-num">1</div><div class="step-text">Generate a <strong>90-second natural dialogue</strong> between two speakers on a topic your learners care about. Specify that you want false starts, hesitation markers, overlapping turns, contractions, and a <strong>clear listening purpose</strong> for learners. <span class="ai-hint">(ChatGPT)</span></div></li>
+      <li><div class="step-num">2</div><div class="step-text">Convert the script to audio and <strong>listen without reading</strong>. Evaluate: Does it sound natural and realistic? Is the language load appropriate for your learners? Note every moment that feels scripted, robotic, or prosodically wrong. <span class="ai-hint">(NaturalReader for quick test, ElevenLabs for quality, Murf for 2-speaker studio)</span></div></li>
+      <li><div class="step-num">3</div><div class="step-text">Identify at least 3 elements where AI got <strong>pragmatics or interaction wrong</strong> — turn-taking, register, cultural reference, or speech rhythm — and rewrite those sections for authenticity. Produce a final improved audio. <span class="ai-hint">(ChatGPT to rewrite, ElevenLabs or Murf for final audio)</span></div></li>
+      <li><div class="step-num">4</div><div class="step-text">Design <strong>2 listening tasks</strong>: a gist task (global comprehension, what is the conversation about?) and a specific information task (students extract particular details). Both must have a clear listening purpose — not just "listen and answer." <span class="ai-hint">(ChatGPT)</span></div></li>
+      <li><div class="step-num">5</div><div class="step-text">Create a <strong>pre-listening activity</strong> that activates schema and introduces 3–4 key words without revealing the dialogue content. This prepares learners for what they will hear — not what they will say. <span class="ai-hint">(ChatGPT)</span></div></li>
+    </ol>
+    <button class="open-btn" onclick="event.stopPropagation();toggleRef(4)"><span>✦</span> Reflection & Prompts</button>
+  </div>
+  <div class="refpanel" id="ref-4">
+    <div class="rp-h">Ready-to-use Prompts</div>
+    <div class="pbox">"Write a natural 90-second spoken dialogue between two B1 Colombian university students (age 20) debating whether to study abroad. Include: false starts (I mean— well actually…), hesitation markers (you know, like, I guess), one interruption [–], contractions (gonna, wanna, kinda), and one cultural reference to Colombia. Format: Speaker A: / Speaker B:"<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="pbox">"Analyze this dialogue for spoken authenticity: [paste]. What makes it sound scripted? Identify 3 places where pragmatics or interaction are wrong. Give 5 specific edits for real spontaneous B1 speech. Then write: one gist task (multiple choice, 3 options) and one specific information task (4 true/false with justification)."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="pbox">"Design a pre-listening activity for this dialogue. Activate prior knowledge about studying abroad, introduce 4 key vocabulary items in context (not as a list), and generate prediction about the conversation outcome. Time: 5 minutes. Format as a student handout section."<button class="cpbtn" onclick="cpText(this)">Copy</button></div>
+    <div class="rp-h">Reflection Questions</div>
+    <ul class="qlist">
+      <li>Does the dialogue sound natural and realistic — or does it reveal AI's limits with spoken language?</li>
+      <li>Is the language load appropriate for your learners at their CEFR level?</li>
+      <li>What elements did you edit to improve authenticity — and what does that reveal?</li>
+      <li>What did AI get wrong in terms of pragmatics or conversational interaction?</li>
+      <li>What is the clear listening purpose for learners in each of your tasks?</li>
+    </ul>
+    <textarea class="rta" id="rtx-4" placeholder="Write your reflection here…"></textarea>
+    <div><button class="sbtn" onclick="saveRef(4)">✓ Save</button><span class="snote" id="sn-4">Saved ✓</span></div>
+  </div>
+</div>
+
+</div><!-- end grid -->
+
+<!-- ══ FINAL REFLECTION ══ -->
+<div class="final-card">
+  <div class="final-bar"></div>
+  <div class="final-head">
+    <div class="final-tag">🔵 Final Reflection · Whole Lab</div>
+    <div class="final-title">What does this lab tell you about AI in materials design?</div>
+    <div class="final-sub">After completing all four stations, reflect on the full experience. These questions are not about the tools — they are about your evolving professional judgment as a materials designer.</div>
+  </div>
+  <div class="final-body">
+    <ul class="final-qs">
+      <li><div class="fq-num">1</div><div>In which station did AI add the most <strong>pedagogical value</strong> — and why? What made that collaboration productive?</div></li>
+      <li><div class="fq-num">2</div><div>Where did AI <strong>misalign with your learners' context</strong>? What did it assume about language, culture, or learners that was incorrect?</div></li>
+      <li><div class="fq-num">3</div><div>What design decisions in this lab <strong>could not be outsourced to AI</strong>? What required your expertise, your knowledge of your learners, your judgment?</div></li>
+      <li><div class="fq-num">4</div><div>How has this lab <strong>changed your materials prototype</strong>? What will you do differently in the next iteration?</div></li>
+      <li><div class="fq-num">5</div><div>What <strong>principle about AI in materials design</strong> are you taking forward — something you would tell a beginning teacher about working with AI?</div></li>
+    </ul>
+    <textarea class="final-rta" id="rtx-5" placeholder="Write your final reflection across all four stations here…"></textarea>
+    <div><button class="final-sbtn" onclick="saveRef(5)">✓ Save Final Reflection</button><span class="snote" id="sn-5">Saved ✓</span></div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="prog-section">
+  <div class="prog-title">✦ Session Progress</div>
+  <div class="prog-bars">
+    <div class="pi" data-s="1"><div class="pi-label">Station 1</div><div class="track"><div class="fill" id="b1"></div></div><div class="pi-pct" id="p1">0%</div></div>
+    <div class="pi" data-s="2"><div class="pi-label">Station 2</div><div class="track"><div class="fill" id="b2"></div></div><div class="pi-pct" id="p2">0%</div></div>
+    <div class="pi" data-s="3"><div class="pi-label">Station 3</div><div class="track"><div class="fill" id="b3"></div></div><div class="pi-pct" id="p3">0%</div></div>
+    <div class="pi" data-s="4"><div class="pi-label">Station 4</div><div class="track"><div class="fill" id="b4"></div></div><div class="pi-pct" id="p4">0%</div></div>
+    <div class="pi" data-s="5"><div class="pi-label">Final</div><div class="track"><div class="fill" id="b5"></div></div><div class="pi-pct" id="p5">0%</div></div>
+  </div>
+</div>
+
+<div class="export-wrap">
+  <button class="expbtn" onclick="exportAll()">⬇ Export All Reflections</button>
+</div>
+<footer>MEI Program · Materials Design · AI Exploration Rotations · Designed with intentionality</footer>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="mbar" id="mbar"></div>
+    <button class="mx" onclick="closeDirect()">✕</button>
+    <div class="mbody">
+      <div class="mname" id="mname"></div>
+      <div class="mcat" id="mcat"></div>
+      <div class="mdesc" id="mdesc"></div>
+      <div class="mst">🎯 How a language teacher uses this</div>
+      <div class="muse" id="muse"></div>
+      <div class="mst">📋 Step-by-step: Getting started</div>
+      <ol class="msteps" id="msteps"></ol>
+      <a class="mgobtn" id="mgobtn" href="#" target="_blank">Open Tool →</a>
+    </div>
+  </div>
+</div>
+<style id="dynSt"></style>
+
+<script>
+const T={
+  chatgpt:{n:'ChatGPT',c:'Conversational AI · Text Generation · OpenAI',col:'#10b981',url:'https://chat.openai.com',
+    d:'ChatGPT is a large language model by OpenAI that generates, edits, and analyzes text through natural conversation. It can act as your primary materials design partner — adapting texts, generating task cards, writing scripts, and creating activities.',
+    u:'<strong>For language teachers:</strong> Your main materials design tool. Use it to adapt texts to CEFR levels, generate role-play task cards with rubrics, write listening scripts, create vocabulary activities, and design pre- and post-task exercises. Always include: CEFR level, student age, country, topic, and the exact pedagogical output needed.',
+    s:['Go to chat.openai.com — create a free account','Click "New Chat" — type your detailed prompt in the message box','Always specify: CEFR level, student age, country, topic, and the exact output you need','Read output critically — never use it directly. Edit with your learners in mind','Use follow-ups in the same chat: "Format this as a printable handout", "Add a rubric"','If results are poor, add more detail to your prompt — specificity always helps']},
+  claude:{n:'Claude',c:'Conversational AI · Document Analysis · Anthropic',col:'#f4a261',url:'https://claude.ai',
+    d:'Claude by Anthropic excels at careful, nuanced text analysis and critical comparison. Best used when you need rigorous evaluation rather than generation — ideal for checking CEFR alignment.',
+    u:'<strong>For language teachers:</strong> Ask Claude to evaluate AI-generated texts for CEFR accuracy, compare two adapted versions critically, or justify whether a vocabulary choice is appropriate for A2. Upload PDFs to level-check entire worksheets.',
+    s:['Go to claude.ai — create a free account','Paste your text or upload a file with the paperclip icon','Ask for analysis: "Identify every word above A2 CEFR and suggest alternatives"','Ask for comparison: "Which version is better for B1 learners? Justify each choice"','Claude retains context — keep refining in the same thread','Use for teacher\'s notes: "Write a pedagogical rationale for using this adapted text"']},
+  gemini:{n:'Gemini',c:'Multimodal AI · Web Search · Google',col:'#60a5fa',url:'https://gemini.google.com',
+    d:"Google's AI that can search the web for current, authentic content and integrates with Google Docs and Drive. Its key advantage: finding and adapting real texts from the internet.",
+    u:'<strong>For language teachers:</strong> Use Gemini when you need fresh, current authentic texts — it can find a recent article on a topic your students care about and adapt it immediately. Export directly to Google Docs.',
+    s:['Go to gemini.google.com — sign in with your Google account','Ask for web content: "Find a recent article about climate change for B1 learners"','Request adaptation: "Rewrite this at A2 for Colombian 8th graders"','Click "Export to Docs" to save directly to Google Drive','For images: upload a photo and ask "What vocabulary could I teach from this?"','Always verify web-sourced content for accuracy before use in class']},
+  deepl:{n:'DeepL Write',c:'AI Writing Refinement · Style & Naturalness',col:'#38bdf8',url:'https://www.deepl.com/write',
+    d:'An AI writing tool that improves English text for clarity, naturalness, and style — working entirely within English. Perfect for making AI-generated text sound genuinely authentic rather than translated or robotic.',
+    u:'<strong>For language teachers:</strong> After adapting a text with ChatGPT or Claude, paste it here to check naturalness. Use the Style selector to match formality to your learners\' level.',
+    s:['Go to deepl.com/write — no account needed','Paste your adapted text into the left panel','Click any underlined phrase to see alternative wordings','Use Style selector (top right): Formal / Informal / Academic / Simple','Copy refined text and compare to original','Keep only changes that improve pedagogical clarity for your specific learners']},
+  characterai:{n:'Character.ai',c:'Persona-Based AI · Role-Play Testing',col:'#2dd4bf',url:'https://character.ai',
+    d:"Create AI characters with consistent personas and speech styles. Used here to TEST whether your speaking scenarios feel natural — not to design them. Reveals unnatural task design before students encounter it.",
+    u:'<strong>For language teachers:</strong> Build a character matching your role-play and practice the scenario yourself. What feels forced or artificial reveals exactly what needs revision in your task design.',
+    s:['Go to character.ai — create a free account','Click "Create" → "Create a Character"','Set name, personality, and an opening line that establishes level and register','Click "Create and Chat" — play the student role yourself','Note what felt forced, unnatural, or too easy — use notes to revise','Share the character link with your class for low-stakes practice']},
+  piai:{n:'Pi',c:'Natural Dialogue AI · Authenticity Testing',col:'#34d399',url:'https://pi.ai',
+    d:"Conversational AI with shorter, more human-like responses. Asks genuine follow-ups and maintains real conversational flow — ideal for testing whether your speaking task creates authentic communicative exchange.",
+    u:'<strong>For language teachers:</strong> Use Pi to reveal whether your speaking task has a real communicative purpose. Its natural response style quickly shows if the information gap is genuine.',
+    s:['Go to pi.ai — no account needed','Start: "Let\'s role-play. You are a travel agent and I\'m a tourist…"','Notice: Does the exchange feel real? Is communication necessary?','Ask Pi to evaluate: "How authentic did that feel for a B1 learner?"','Compare the same scenario on Character.ai and Pi','Use feedback to revise your task before class']},
+  talkai:{n:'TalkAI',c:'Voice Conversation Practice · Oral Testing',col:'#a3e635',url:'https://talkai.info',
+    d:'Real-time spoken conversation with AI. Bridges text-based tools and authentic speaking practice — reveals prosodic and naturalness issues that text testing misses.',
+    u:'<strong>For language teachers:</strong> Test how your speaking tasks feel when performed orally. Assign as low-stakes oral practice before assessed tasks.',
+    s:['Go to talkai.info — basic use without account','Click microphone — grant browser mic permissions','Speak your opening line and let TalkAI respond','Evaluate: appropriate level? Natural for B1?','Set context: "You are a B1 English speaker. Keep responses short"','Note what worked and what only a human partner uniquely provides']},
+  canva:{n:'Canva Magic Design',c:'AI Design · Visual Content & Layout',col:'#c084fc',url:'https://www.canva.com/ai-image-generator/',
+    d:"Combines AI image generation with Canva's design editor. Generate an image AND immediately add vocabulary labels, questions, or activity instructions — all in one workspace.",
+    u:'<strong>For language teachers:</strong> Turn AI images into fully formatted pedagogical handouts. Add blank labels for labeling activities, vocabulary boxes, or instructions directly on the image. Free tier is sufficient.',
+    s:['Go to canva.com — free account','Click "Create a design" → choose format (A4, flashcard, slide)','Left sidebar → "Apps" → "Text to Image" or "Magic Media"','Type a detailed pedagogical prompt — specify learning function, not just appearance','Choose style: "Infographic" or "Flat Design" for educational visuals','After generating, add text labels, vocabulary boxes, or questions as overlays']},
+  dalle:{n:'DALL·E (via ChatGPT)',c:'AI Image Generation · OpenAI',col:'#f472b6',url:'https://chat.openai.com',
+    d:"OpenAI's image model inside ChatGPT. Generate an image AND its accompanying lesson activity in the same conversation — image and activity stay linked.",
+    u:'<strong>For language teachers:</strong> Generate vocabulary diagrams then ask ChatGPT to write a labeling activity using that image in the same chat. Specify pedagogical function in your prompt, not just visual appearance.',
+    s:['Go to chat.openai.com — free account','Click the image icon (🖼) or describe an image in your prompt','Write a detailed pedagogical prompt: content, style, label needs, learning purpose','ChatGPT generates inline — click to expand and download','Follow up: "Now write a vocabulary labeling activity for this image for B1"','Document which prompt features produced more pedagogically useful images']},
+  ideogram:{n:'Ideogram',c:'AI Image Generation · Text-in-Image Specialist',col:'#fb923c',url:'https://ideogram.ai',
+    d:'AI image generator with one critical advantage: it renders readable text inside images accurately. Most AI generators produce illegible text. Ideogram produces legible labels and captions within the image itself.',
+    u:'<strong>For language teachers:</strong> Generate labeled vocabulary diagrams where words appear directly in the image — no post-editing needed. Critical for pedagogical images that scaffold meaning through labels.',
+    s:['Go to ideogram.ai — create free account','Click "Generate" — put exact label text in quotation marks in your prompt','Example: A rainforest diagram labeled "Canopy", "Understory", "Forest Floor" with arrows','Choose style: "Illustration" or "Infographic" — not "Photo"','Evaluate: are labels legible and correctly placed? Regenerate if not','Apply the Decorative vs. Pedagogical framework to your result']},
+  firefly:{n:'Adobe Firefly',c:'AI Image Generation · Commercially Licensed',col:'#ff6b6b',url:'https://firefly.adobe.com',
+    d:"Adobe's AI image tool built on licensed images — safe for published educational materials. Integrates with Adobe Express for immediate post-editing.",
+    u:'<strong>For language teachers:</strong> When publishing materials, use Firefly for copyright-cleared images. Edit immediately in Adobe Express to add vocabulary labels or activity instructions.',
+    s:['Go to firefly.adobe.com — create free Adobe account','Click "Text to Image" → type your educational prompt','Content Type: "Graphic" or "Illustration" — not "Photo"','Style filters: "Infographic" or "Flat Design" for diagrams','Generate 4 variations — select the most pedagogically functional','Click "Edit in Adobe Express" to add labels or instructions']},
+  elevenlabs:{n:'ElevenLabs',c:'Text-to-Speech · Professional Voice Generation',col:'#fb7185',url:'https://elevenlabs.io',
+    d:'The most advanced AI TTS platform — near-human voice quality with natural intonation and prosody. Multiple voice options and speed control.',
+    u:'<strong>For language teachers:</strong> Convert dialogue scripts to high-quality audio. Choose voices matching your character profiles. Download as MP3 for your LMS or printed worksheets.',
+    s:['Go to elevenlabs.io — free account (10,000 characters/month)','Click "Speech Synthesis" from the left menu','Paste dialogue for one speaker at a time','Click "Voice" — filter by accent, age, gender to match your character','Adjust Stability (lower = more expressive) and Clarity','Generate → listen critically → download as MP3','For 2-speaker dialogues: generate each separately, combine with Audacity (free)']},
+  murf:{n:'Murf AI',c:'Text-to-Speech · Multi-Speaker Audio Studio',col:'#f87171',url:'https://murf.ai',
+    d:'Professional voice studio with a multi-speaker editor. Assign different voices to characters, adjust pacing, and export one combined audio file — no external audio editing needed.',
+    u:'<strong>For language teachers:</strong> The most efficient workflow for two-speaker listening texts. Write the full dialogue, assign Voice A to Speaker 1 and Voice B to Speaker 2, and get a single MP3 ready for your lesson.',
+    s:['Go to murf.ai — free account','Click "Create New Project" → "AI Voiceover Studio"','Paste dialogue — each speaker on a new line','Highlight Speaker 1 → assign Voice A. Highlight Speaker 2 → assign Voice B','Preview → adjust pause durations between turns','Listen for unnatural intonation — rewrite those lines','Export as MP3 — embed in your lesson or LMS']},
+  naturalreader:{n:'NaturalReader',c:'Text-to-Speech · Quick Preview Tool',col:'#e879f9',url:'https://www.naturalreaders.com/online/',
+    d:'Simple, free TTS — no setup required. Ideal for a fast first listen to evaluate naturalness before investing time in higher-quality production.',
+    u:'<strong>For language teachers:</strong> Your first-pass listening test. Paste your script, listen immediately, identify robotic phrasing, then rewrite before moving to ElevenLabs or Murf for final audio.',
+    s:['Go to naturalreaders.com/online — no account needed','Paste your dialogue script','Select a voice from the dropdown','Click ▶ to listen immediately','Mark lines that sound robotic or unnaturally stressed','Rewrite: shorter sentences, add commas for pauses, use contractions','Re-listen — this iterative process IS the core learning task']}
+};
+
+function openTool(id){
+  const t=T[id];if(!t)return;
+  document.getElementById('mbar').style.background=t.col;
+  document.getElementById('mname').textContent=t.n;
+  const mc=document.getElementById('mcat');mc.textContent=t.c;mc.style.color=t.col;
+  document.getElementById('mdesc').textContent=t.d;
+  const mu=document.getElementById('muse');mu.innerHTML=t.u;mu.style.borderLeftColor=t.col;
+  const gb=document.getElementById('mgobtn');gb.href=t.url;gb.style.background=t.col;
+  const sl=document.getElementById('msteps');sl.innerHTML='';
+  t.s.forEach(s=>{const li=document.createElement('li');li.textContent=s;sl.appendChild(li);});
+  document.getElementById('dynSt').textContent=`.msteps li::before{background:${t.col};}`;
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(e){if(e.target===document.getElementById('overlay'))closeDirect();}
+function closeDirect(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDirect();});
+
+// timer
+let tot=20*60,rem=tot,iv=null,run=false;
+function ft(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function toggleTimer(){
+  if(run){clearInterval(iv);run=false;document.getElementById('tBtn').textContent='▶ Start';document.getElementById('tBtn').classList.remove('on');}
+  else{run=true;document.getElementById('tBtn').textContent='⏸ Pause';document.getElementById('tBtn').classList.add('on');
+    iv=setInterval(()=>{if(rem<=0){clearInterval(iv);run=false;document.getElementById('tBtn').textContent='▶ Start';document.getElementById('tBtn').classList.remove('on');document.getElementById('tDisp').textContent='00:00';alert('⏱ Time is up! Rotate to the next station.');return;}rem--;document.getElementById('tDisp').textContent=ft(rem);},1000);}
+}
+function resetTimer(){clearInterval(iv);run=false;rem=tot;document.getElementById('tDisp').textContent=ft(rem);document.getElementById('tBtn').textContent='▶ Start';document.getElementById('tBtn').classList.remove('on');}
+function setStation(n){document.getElementById('activeS').textContent=n;}
+
+// reflection
+function toggleRef(n){
+  const p=document.getElementById('ref-'+n);p.classList.toggle('open');
+  const b=p.previousElementSibling;
+  b.innerHTML=p.classList.contains('open')?'<span>✕</span> Close':'<span>✦</span> Reflection & Prompts';
+}
+function saveRef(n){
+  const el=document.getElementById('rtx-'+n);
+  if(!el)return;
+  localStorage.setItem('ref'+n,el.value);
+  const s=document.getElementById('sn-'+n);s.classList.add('show');setTimeout(()=>s.classList.remove('show'),2000);
+  upProg(n);
+}
+function upProg(n){
+  const el=document.getElementById('rtx-'+n);if(!el)return;
+  const pct=Math.min(100,Math.round((el.value.trim().length/300)*100));
+  const b=document.getElementById('b'+n);const p=document.getElementById('p'+n);
+  if(b)b.style.width=pct+'%';if(p)p.textContent=pct+'%';
+}
+window.addEventListener('load',()=>{
+  for(let i=1;i<=5;i++){
+    const el=document.getElementById('rtx-'+i);if(!el)continue;
+    const v=localStorage.getItem('ref'+i);if(v){el.value=v;upProg(i);}
+    el.addEventListener('input',()=>upProg(i));
+  }
+});
+function cpText(btn){
+  navigator.clipboard.writeText(btn.parentElement.childNodes[0].textContent.trim()).then(()=>{btn.textContent='✓';setTimeout(()=>btn.textContent='Copy',1500);});
+}
+function exportAll(){
+  const tt=['Text Adaptation','Speaking & Interaction','Vocabulary & Visual','Listening / Micro-Script','Final Reflection (Whole Lab)'];
+  let o='=== AI EXPLORATION ROTATIONS — REFLECTIONS ===\nExported: '+new Date().toLocaleString()+'\n\n';
+  for(let i=1;i<=5;i++){
+    o+='────────────────────────────────\n';
+    o+=(i<5?'Station '+i+': ':'Final: ')+tt[i-1]+'\n';
+    o+='────────────────────────────────\n';
+    const el=document.getElementById('rtx-'+i);
+    o+=(el?el.value.trim():'')||'[No reflection yet]';
+    o+='\n\n';
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([o],{type:'text/plain'}));a.download='AI_Rotations_Reflections.txt';a.click();
+}
+</script>
+</body>
+</html>
